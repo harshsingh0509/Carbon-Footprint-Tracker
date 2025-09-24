@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cft-secrets
+type: Opaque
+stringData:
+  db_user: cft
+  db_password: cftpass
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cft-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: cft-postgres }
+  template:
+    metadata:
+      labels: { app: cft-postgres }
+    spec:
+      containers:
+        - name: db
+          image: postgres:16-alpine
+          env:
+            - { name: POSTGRES_DB, value: cft }
+            - { name: POSTGRES_USER, valueFrom: { secretKeyRef: { name: cft-secrets, key: db_user } } }
+            - { name: POSTGRES_PASSWORD, valueFrom: { secretKeyRef: { name: cft-secrets, key: db_password } } }
+          ports: [{containerPort: 5432}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cft-postgres
+spec:
+  selector: { app: cft-postgres }
+  ports:
+    - port: 5432
+      targetPort: 5432

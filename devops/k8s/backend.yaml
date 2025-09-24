@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cft-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: cft-backend }
+  template:
+    metadata:
+      labels: { app: cft-backend }
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/your-user/cft-backend:latest
+          ports: [{containerPort: 8080}]
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://cft-postgres:5432/cft
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef: { name: cft-secrets, key: db_user }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: cft-secrets, key: db_password }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cft-backend
+spec:
+  selector: { app: cft-backend }
+  ports:
+    - port: 8080
+      targetPort: 8080
